@@ -4,7 +4,6 @@ import Data.List (elemIndex)
 
 import Text.Parsec
 import Text.Parsec.String
-import Text.Parsec.Combinator
 
 data LE = Va String | Ap LE LE | Ab LE LE
   deriving (Eq)
@@ -75,20 +74,8 @@ instance Show LE where
   show (Ap e e') = "(" ++ show e ++ ")(" ++ show e' ++ ")"
   show (Ab v e) = "λ" ++ show v ++ "." ++ show e
 
-lxm :: Parser a -> Parser a
-lxm p = p >>= \r -> many space >> return r
-
 ide :: Parser LE
 ide = letter >>= \c -> return $ Va (c:"")
-
-oP :: Parser Char
-oP = char '('
-
-cP :: Parser Char
-cP = char ')'
-
-lam :: Parser Char
-lam = char 'λ'
 
 dt :: Parser Char
 dt = char '.'
@@ -97,12 +84,7 @@ expr :: Parser LE
 expr = appP <|> absP <|> ide
 
 absP :: Parser LE
-absP = do
-  _ <- lam
-  i <- ide
-  _ <- dt
-  e <- expr
-  return $ Ab i e
+absP = char 'λ' >> ide >>= \i -> char '.' >> expr >>= return . Ab i
 
 optPar :: Parser a -> Parser a
 optPar p = try $ between (string "(") (string ")") p <|> p
