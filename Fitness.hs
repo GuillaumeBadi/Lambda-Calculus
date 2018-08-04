@@ -2,16 +2,15 @@
 module Fitness(fitness) where
 
 import Types
+import Lambda
 
-cvrg :: [([LE], LE)] -> (LE -> Double)
-cvrg dtst p = map
+  {-
+    It should work and converge slowly for
+    small and easy problems 😂
+    -}
 
-fitness :: [(String, LE)] -- list of parameters
-        -> (LE -> LE) -- the reducer function
-        -> (LE -> Double) -- function evaluating the generated program
-        -> LE -- The generated program
-        -> Double -- final score
-
-fitness ps rdc ev pr = undefined
-  where pr' = 
-        
+fitness :: Dataset -> LE -> (Double, LE)
+fitness dtst p = ((ln rghts) / (ln dtst), p)
+  where f (is, o) = (call is p) == o
+        rghts = map f dtst
+        ln = fromIntegral . length

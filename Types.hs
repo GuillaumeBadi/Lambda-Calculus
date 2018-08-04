@@ -6,6 +6,7 @@ data LE = Va String | Ap LE LE | Ab LE LE
 data DB =  DBI Int String | DBAp DB DB | DBAb String DB | DBNil
 
 type Population = [LE]
+type Dataset = [([LE], LE)]
 
 isdbab :: DB -> Bool
 isdbab a@DBAb{} = True
