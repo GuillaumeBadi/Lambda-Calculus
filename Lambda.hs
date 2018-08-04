@@ -1,4 +1,4 @@
-module Lambda(reduce, dbi, rdc, toLE) where
+module Lambda(reduce, dbi, rdc, toLE, call) where
 
 import Debug.Trace
 import Data.List (elemIndex)
@@ -39,7 +39,12 @@ rdc i@DBI{} = i
 rdc (DBAb v e) = (DBAb v . rdc) e
 rdc (DBAp i@DBI{} e) = DBAp i (rdc e)
 rdc (DBAp e@DBAb{} e') = rdc $ sub e (rdc e')
-rdc (DBAp e e') = DBAp (rdc e) (rdc e')
+
+rdc (DBAp e e')
+  | isdbab ne = rdc $ DBAp (rdc e) (rdc e')
+  | otherwise = DBAp (rdc e) (rdc e')
+  where ne = rdc e
+        ne' = rdc e'
 
 toLE :: DB -> LE
 toLE (DBI i n) = Va n
@@ -51,4 +56,4 @@ reduce :: LE -> LE
 reduce = (toLE . rdc . dbi [])
 
 call :: [LE] -> LE -> LE
-call = undefined
+call vs e = reduce $ foldl Ap e vs

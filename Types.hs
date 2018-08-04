@@ -7,6 +7,10 @@ data DB =  DBI Int String | DBAp DB DB | DBAb String DB | DBNil
 
 type Population = [LE]
 
+isdbab :: DB -> Bool
+isdbab a@DBAb{} = True
+isdbab _ = False
+
 instance Show DB where
   show (DBI i _) = show i
   show (DBAp v@DBI{} v'@DBI{}) = show v ++ show v'
