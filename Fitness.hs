@@ -2,6 +2,7 @@
 module Fitness(fitness) where
 
 import Types
+import Debug.Trace
 import Lambda
 
   {-
@@ -12,5 +13,5 @@ import Lambda
 fitness :: Dataset -> LE -> (Double, LE)
 fitness dtst p = ((ln rghts) / (ln dtst), p)
   where f (is, o) = (call is p) == o
-        rghts = map f dtst
+        rghts = filter f dtst
         ln = fromIntegral . length

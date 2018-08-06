@@ -5,5 +5,5 @@ import Control.Monad
 import Types
 import Generator
 
-population :: Int -> IO [LE]
-population sz = replicateM sz (gen [])
+population :: [LE] -> Int -> IO [LE]
+population vs sz = replicateM sz (gen vs)

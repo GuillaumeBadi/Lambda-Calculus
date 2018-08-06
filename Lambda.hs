@@ -1,6 +1,5 @@
-module Lambda(reduce, dbi, rdc, toLE, call) where
+module Lambda(reduce, reduce2, dbi, rdc, toLE, call) where
 
-import Debug.Trace
 import Data.List (elemIndex)
 
 import Types
@@ -51,6 +50,12 @@ toLE (DBI i n) = Va n
 toLE (DBAp e e') = Ap (toLE e) (toLE e')
 toLE (DBAb v e) = Ab (Va v) (toLE e)
 toLE _ = error "Should not be Nil"
+
+-- reduce2 :: LE -> LE
+reduce2 = (rdc . dbi [])
+
+-- call2 :: [LE] -> LE -> LE
+call2 vs e = reduce $ foldl Ap e vs
 
 reduce :: LE -> LE
 reduce = (toLE . rdc . dbi [])
