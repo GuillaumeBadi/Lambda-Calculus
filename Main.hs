@@ -1,11 +1,14 @@
 
 module Main where
 
+import Text.Parsec
+
 import Types
+import Parser
 import Lambda
 import ChurchEncoding
 
-rd :: String -> LE
+rd :: String -> Either ParseError LE
 rd s = lc s reduce
 
-main = undefined
+main = (putStrLn . show . rd) "((λx.x)(λy.λz.zy))"

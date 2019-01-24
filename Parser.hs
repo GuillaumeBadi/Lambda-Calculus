@@ -6,35 +6,46 @@ import Text.Parsec.String
 
 import Types
 
-stIde :: Parser LE
-stIde = (letter >>= \c -> return $ Va (c:""))
+-- Parse a single letter identifier
+-- They don't have to be followed by a space
+--   i.e. 'x'
+shortIdentifier :: Parser LE
+shortIdentifier = (letter >>= \c -> return $ Va (c:""))
 
-lgIde :: Parser LE
-lgIde = do
+-- Parse a long identifier
+-- They should be followed by a space for readability
+--   i.e. 'input '
+longIdentifier :: Parser LE
+longIdentifier = do
   n <- many letter
   _ <- char ' '
   return . Va $ n
 
-ide = try lgIde <|> stIde
+-- Parse an identifier
+--  i.e 'x' or 'input'
+identifier = try longIdentifier <|> shortIdentifier
 
-expr :: Parser LE
-expr = appP <|> absP <|> ide
+-- Expression Parser
+--   first, it looks for an application,
+--   then an abstraction definition,
+--   then a single identifier
+expressionP :: Parser LE
+expressionP = applicationP <|> abstractionP <|> identifier
 
-absP :: Parser LE
-absP = char 'λ' >> ide >>= \i -> char '.' >> expr >>= return . Ab i
+-- Abstraction Parser
+abstractionP :: Parser LE
+abstractionP = char 'λ' >> identifier >>= \i -> char '.' >> expressionP >>= return . Ab i
 
-optPar :: Parser a -> Parser a
-optPar p = try $ between (string "(") (string ")") p <|> p
+-- Parser Combinator for Parenthesis
+optionalParenP :: Parser a -> Parser a
+optionalParenP p = try $ between (string "(") (string ")") p <|> p
 
-appP :: Parser LE
-appP = optPar $ many1 (optPar absP <|> ide) >>= \(e:es) -> return $ foldl Ap e es
+-- Application Parser
+applicationP :: Parser LE
+applicationP = optionalParenP $
+  many1 (optionalParenP abstractionP <|> identifier) >>= \(e:es) -> return $ foldl Ap e es
 
-  {-
-    TODO:
-      Find a more elegant way than the case-of statement
-    -}
-
-lc :: String -> (LE -> LE) -> LE
-lc s f = case parse expr "" s of
-          Left err -> error (show err)
-          Right e -> f e
+-- Full Lambda calculus Parser
+-- TODO: Tests
+lc :: String -> (LE -> LE) -> Either ParseError LE
+lc s f = parse expressionP "" s >>= (return . f)
