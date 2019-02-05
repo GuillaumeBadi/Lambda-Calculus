@@ -1,15 +1,19 @@
-module Lambda(reduce, reduce2, dbi, rdc, toLE, call) where
+module Lambda(reduce, reduceWith, reduce2, dbi, reduceDBI, toLE, call) where
 
 import Data.List (elemIndex)
 
 import Types
 
-dbi :: [LE] -> LE -> DB
+-- Changes a regular λ calculus with dbis to avoid
+--   name collapse while reducing the expression
+dbi :: [LE] -- A list of free variables (i.e. inputs)
+    -> LE -- An expression
+    -> DB -- The expression translated into DeBruijn Index
 dbi s (Ap e e') = (DBAp (dbi s e) (dbi s e'))
 dbi s (Ab v@(Va n) e) = DBAb n (dbi (v:s) e)
 dbi s v@(Va n) = case elemIndex v s of
-                    Nothing -> error $ "Unknown variable: " ++ n
-                    Just i -> DBI i n
+                   Nothing -> error ("DBI: Unknown variable: " ++ n ++ ", variables: " ++ (show s))
+                   Just i -> DBI i n
 
 rpl i (DBAb v e) = DBAb v (rpl (i+1) e)
 rpl i (DBAp e e') = DBAp (rpl i e) (rpl i e')
@@ -29,21 +33,22 @@ ins e d@DBI{} = d
 ins e (DBAb v e') = DBAb v (ins e e')
 ins e (DBAp e' e'') = DBAp (ins e e') (ins e e'')
 
-sub :: DB -> DB -> DB
-sub (DBAb v e) e' = ins e' $ dec $ rpl 0 e
-sub _ _= error "Can only subsitute abstractions with expression"
+substitute :: DB -> DB -> DB
+substitute (DBAb v e) e' = ins e' $ dec $ rpl 0 e
+substitute _ _= error "Can only subsitute abstractions with expression"
 
-rdc :: DB -> DB
-rdc i@DBI{} = i
-rdc (DBAb v e) = (DBAb v . rdc) e
-rdc (DBAp i@DBI{} e) = DBAp i (rdc e)
-rdc (DBAp e@DBAb{} e') = rdc $ sub e (rdc e')
+-- Reduces a DBI expression to its minimal form
+reduceDBI :: DB -> DB
+reduceDBI i@DBI{} = i
+reduceDBI (DBAb v e) = (DBAb v . reduceDBI) e
+reduceDBI (DBAp i@DBI{} e) = DBAp i (reduceDBI e)
+reduceDBI (DBAp e@DBAb{} e') = reduceDBI $ substitute e (reduceDBI e')
 
-rdc (DBAp e e')
-  | isdbab ne = rdc $ DBAp (rdc e) (rdc e')
-  | otherwise = DBAp (rdc e) (rdc e')
-  where ne = rdc e
-        ne' = rdc e'
+reduceDBI (DBAp e e')
+  | isdbab ne = reduceDBI $ DBAp ne ne'
+  | otherwise = DBAp ne ne'
+  where ne = reduceDBI e
+        ne' = reduceDBI e'
 
 toLE :: DB -> LE
 toLE (DBI i n) = Va n
@@ -52,13 +57,12 @@ toLE (DBAb v e) = Ab (Va v) (toLE e)
 toLE _ = error "Should not be Nil"
 
 -- reduce2 :: LE -> LE
-reduce2 = (rdc . dbi [])
+reduce2 = (reduceDBI . dbi [])
 
--- call2 :: [LE] -> LE -> LE
-call2 vs e = reduce $ foldl Ap e vs
+reduceWith vars = (toLE . reduceDBI . dbi vars)
 
 reduce :: LE -> LE
-reduce = (toLE . rdc . dbi [])
+reduce = (toLE . reduceDBI . dbi [])
 
 call :: [LE] -> LE -> LE
 call vs e = reduce $ foldl Ap e vs

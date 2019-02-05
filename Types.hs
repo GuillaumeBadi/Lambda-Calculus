@@ -4,6 +4,7 @@ data LE = Va String | Ap LE LE | Ab LE LE
   deriving (Eq)
 
 data DB =  DBI Int String | DBAp DB DB | DBAb String DB | DBNil
+  deriving (Eq)
 
 type Population = [LE]
 type Dataset = [([LE], LE)]
